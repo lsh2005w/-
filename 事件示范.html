@@ -1,0 +1,1127 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JavaScript 常见事件大全</title>
+  <style>
+    /* ========== 页面基础样式 ========== */
+    /* 全局重置，让所有元素的盒模型为 border-box，避免内边距影响宽高计算 */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    /* content-box	默认值。如果你设置一个元素的宽为 100px，那么这个元素的内容区会有 100px 宽，并且任何边框和内边距的宽度都会被增加到最后绘制出来的元素宽度中。
+border-box	告诉浏览器：你想要设置的边框和内边距的值是包含在 width 内的。也就是说，如果你将一个元素的 width 设为 100px，那么这 100px 会包含它的 border 和 padding，内容区的实际宽度是 width 减 去(border + padding) 的值。大多数情况下，这使得我们更容易地设定一个元素的宽高。
+注：border-box 不包含 margin。 */
+    body {
+      font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+      background: #1e1e2e;   /* 深色背景 */
+      color: #cdd6f4;        /* 浅色文字 */
+      padding: 24px;
+      min-height: 100vh;
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 8px;
+      color: #cba6f7;        /* 淡紫色标题 */
+      font-size: 28px;
+    }
+    .subtitle {
+      text-align: center;
+      color: #a6adc8;
+      margin-bottom: 24px;
+      font-size: 14px;
+    }
+
+    /* ========== 事件日志面板（右侧固定） ========== */
+    .log-panel {
+      position: fixed;       /* 固定在屏幕上，不随页面滚动 */
+      right: 16px; top: 16px;
+      width: 360px; height: calc(100vh - 32px); /*高度占满视口减去上下边距 这个是很好的适配全面屏幕 */
+      background: #181825;
+      border: 1px solid #45475a;
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      z-index: 100;          /* 确保在其他元素上面 */
+    }
+    .log-panel h3 {
+      padding: 14px 16px;
+      border-bottom: 1px solid #45475a;
+      color: #f5c2e7;
+      font-size: 15px;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .log-list {
+      flex: 1;               /* 占据剩余空间 */
+      overflow-y: auto;      /* 日志过多时出现滚动条 */
+      padding: 8px;
+      font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+      font-size: 12px; line-height: 1.7;
+    }
+    .log-list .item {
+      padding: 4px 8px;
+      border-bottom: 1px solid #313244;
+      animation: fadeIn 0.2s; /* 新日志淡入动画 */
+    }
+    @keyframes fadeIn { 
+      from { opacity: 0; transform: translateX(10px); } 
+      to { opacity: 1; transform: none; } 
+    }
+    .log-list .type  { color: #94e2d5; }   /* 事件类型颜色 */
+    .log-list .detail { color: #a6adc8; }  /* 详情文字颜色 */
+    .log-list .target { color: #f9e2af; }  /* 目标元素颜色 */
+    .btn-clear {
+      background: #f38ba8; color: #1e1e2e; border: none;
+      padding: 4px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;
+    }
+    .btn-clear:hover { background: #eba0ac; }
+
+    /* ========== 演示区域网格布局 ========== */
+    .demo-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;  /* 两列卡片 */
+      gap: 16px;
+      margin-right: 390px; /* 给右侧固定的日志面板留出空间，避免重叠 */
+    }
+    .demo-card {
+      background: #313244;
+      border-radius: 12px;
+      padding: 20px;
+    }
+    .demo-card h2 {
+      font-size: 16px;
+      margin-bottom: 12px;
+      color: #89b4fa;
+      border-bottom: 1px solid #45475a;
+      padding-bottom: 8px;
+    }
+
+    /* ========== 各种演示元素 ========== */
+    .box {
+      width: 140px; height: 80px;
+      background: #45475a; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; user-select: none; transition: background 0.15s;
+      font-size: 13px; text-align: center; margin: 4px;
+    }
+    .box:hover { background: #585b70; }
+
+    input, textarea, select, button {
+      padding: 8px 12px; border-radius: 6px; border: 1px solid #585b70;
+      background: #1e1e2e; color: #cdd6f4; font-size: 13px; outline: none;
+      margin: 4px 2px;
+    }
+    input:focus, textarea:focus, select:focus {
+      border-color: #89b4fa;
+    }
+    button {
+      cursor: pointer; background: #89b4fa; border-color: #89b4fa;
+      color: #1e1e2e; font-weight: 600;
+    }
+    button:hover { opacity: 0.85; }
+
+    .drag-source {
+      width: 100px; height: 60px;
+      background: #f5c2e7; color: #1e1e2e;
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 8px; cursor: grab; font-size: 13px; margin: 4px;
+      transition: transform 0.1s;
+    }
+    .drag-source:active { cursor: grabbing; }
+    .drop-zone {
+      width: 180px; height: 100px;
+      border: 2px dashed #585b70; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      margin: 4px; font-size: 13px; transition: border-color 0.2s;
+    }
+    .drop-zone.over { 
+      border-color: #a6e3a1; background: rgba(166,227,161,0.1); 
+    }
+
+    .progress-bar {
+      width: 100%; height: 14px; background: #45475a; border-radius: 7px; overflow: hidden;
+    }
+    .progress-bar .fill {
+      height: 100%; background: #a6e3a1; border-radius: 7px; transition: width 0.1s;
+      width: 0%;
+    }
+
+    .scroll-box {
+      height: 90px; overflow-y: auto; background: #1e1e2e;
+      border-radius: 6px; padding: 8px; font-size: 12px; line-height: 1.8;
+      border: 1px solid #45475a;
+    }
+    .scroll-box p { opacity: 0.6; }
+
+    .event-indicator {
+      display: inline-block; width: 10px; height: 10px; border-radius: 50%;
+      background: #f38ba8; margin-right: 6px; transition: background 0.3s;
+    }
+    .event-indicator.active { background: #a6e3a1; }
+
+    /* 响应式：当屏幕宽度小于960px时，卡片变为单列，日志面板移到下方 */
+    @media (max-width: 960px) {
+      .demo-grid { grid-template-columns: 1fr; margin-right: 0; }
+      .log-panel { position: static; width: 100%; height: 300px; margin-top: 16px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- 页面标题及统计信息 -->
+<h1>📋 JavaScript 常见事件大全</h1>
+<p class="subtitle">打开右侧日志面板观察每个事件的触发时机 &nbsp;|&nbsp; <span id="eventCount">已触发 0 个事件</span></p>
+
+<!-- ==================== 右侧日志面板 ==================== -->
+<!-- 该面板固定于右下角，实时显示触发的事件名称和详情 -->
+<div class="log-panel">
+  <h3>
+    📜 事件日志
+    <button class="btn-clear" id="btnClearLog">清空</button>
+  </h3>
+  <div class="log-list" id="logList">
+    <div style="color:#6c7086; text-align:center; padding:20px;">等待事件触发...</div>
+  </div>
+</div>
+
+<!-- ==================== 演示卡片网格 ==================== -->
+<div class="demo-grid">
+
+  <!-- ===== 1. 鼠标事件 ===== -->
+  <div class="demo-card" id="mouseCard">
+    <h2>🖱️ 鼠标事件 (Mouse Events)</h2>
+    <!--
+      此处将展示以下鼠标事件：
+      click（单击）、dblclick（双击）、mousedown（按下）、mouseup（松开）、
+      mousemove（移动）、mouseover / mouseout（冒泡进出）、
+      mouseenter / mouseleave（不冒泡进出）、contextmenu（右键菜单）
+    -->
+    <!-- 测试用的矩形块，所有鼠标事件都会绑定在这个元素上 -->
+    <div class="box" id="mouseBox">鼠标事件测试区<br><small>单击/双击/右键</small></div>
+    <!-- 事件指示灯：事件触发时会短暂亮起 -->
+    <div style="margin-top:8px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+      <span class="event-indicator" id="indicatorClick"></span> click
+      <span class="event-indicator" id="indicatorDblclick"></span> dblclick
+      <span class="event-indicator" id="indicatorContext"></span> contextmenu
+    </div>
+    <!-- 显示鼠标在元素内的坐标 -->
+    <div style="margin-top:6px;font-size:12px;color:#a6adc8;" id="mousePos">坐标: —</div>
+  </div>
+
+  <!-- ===== 2. 键盘事件 ===== -->
+  <div class="demo-card">
+    <h2>⌨️ 键盘事件 (Keyboard Events)</h2>
+    <!--
+      演示 keydown（按下）和 keyup（松开）事件，
+      并显示按键的具体值（event.key）、物理码（event.code）、组合键状态。
+      还将演示拦截 Ctrl+S 的默认行为。
+    -->
+    <input type="text" id="keyInput" placeholder="在此输入文字，观察键盘事件..." style="width:100%;">
+    <div style="margin-top:8px;font-size:12px;color:#a6adc8;" id="keyInfo">
+      key: — &nbsp;|&nbsp; code: — &nbsp;|&nbsp; 组合键: —
+    </div>
+    <div style="margin-top:4px;font-size:12px;color:#f38ba8;" id="comboInfo"></div>
+  </div>
+
+  <!-- ===== 3. 表单事件 ===== -->
+  <div class="demo-card">
+    <h2>📝 表单事件 (Form Events)</h2>
+    <!--
+      演示 input（实时输入）、change（值改变并失去焦点/选择改变）、
+      focus / blur（焦点得失）、submit（提交）、reset（重置）。
+      提交时会阻止默认行为并弹出提示。
+    -->
+    <form id="demoForm">
+      <div style="display:flex;flex-wrap:wrap;gap:8px;">
+        <input type="text" id="formName" placeholder="姓名 (text)" style="width:45%;">
+        <input type="email" id="formEmail" placeholder="邮箱 (email)" style="width:45%;">
+      </div>
+      <div style="margin-top:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <select id="formCity">
+          <option value="">选择城市...</option>
+          <option value="bj">北京</option>
+          <option value="sh">上海</option>
+          <option value="gz">广州</option>
+        </select>
+        <label style="font-size:13px;cursor:pointer;">
+          <input type="checkbox" id="formAgree"> 同意条款
+        </label>
+      </div>
+      <div style="margin-top:10px;display:flex;gap:8px;">
+        <button type="submit">提交</button>
+        <button type="reset">重置</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- ===== 4. 窗口/文档事件 ===== -->
+  <div class="demo-card">
+    <h2>🪟 窗口 & 文档事件 (Window & Document)</h2>
+    <!--
+      演示 DOMContentLoaded、load、beforeunload（离开页面）、
+      resize（窗口大小变化，使用防抖优化）、scroll（滚动，使用防抖优化）、
+      visibilitychange（标签页切换）。
+    -->
+    <div class="scroll-box" id="scrollBox">
+      <p>📜 上下滚动此区域触发 scroll 事件</p><p>第二行内容</p><p>第三行内容</p>
+      <p>第四行内容</p><p>第五行内容</p><p>第六行内容</p>
+      <p>第七行内容</p><p>第八行内容</p>
+    </div>
+    <div style="margin-top:8px;font-size:12px;color:#a6adc8;">
+      窗口尺寸: <span id="windowSize">—</span>
+      &nbsp;|&nbsp; 滚动位置: <span id="scrollPos">—</span>
+      &nbsp;|&nbsp; 页面可见: <span id="pageVisible">✅</span>
+    </div>
+    <div style="margin-top:6px;font-size:11px;color:#6c7086;">
+      刷新页面试试 beforeunload 提示
+    </div>
+  </div>
+
+  <!-- ===== 5. 触摸事件 ===== -->
+  <div class="demo-card">
+    <h2>👆 触摸事件 (Touch Events)</h2>
+    <!--
+      演示 touchstart、touchmove、touchend、touchcancel。
+      桌面端浏览器通常会模拟这些事件（用鼠标操作即可观察）。
+    -->
+    <div class="box" id="touchBox" style="width:100%;height:100px;">
+      👆 移动端请触摸 / 桌面端用鼠标模拟<br>
+      <small id="touchInfo">等待触摸...</small>
+    </div>
+  </div>
+
+  <!-- ===== 6. 剪贴板事件 ===== -->
+  <div class="demo-card">
+    <h2>📋 剪贴板事件 (Clipboard Events)</h2>
+    <!--
+      演示 copy、cut、paste 事件，
+      并尝试读取粘贴的内容。
+    -->
+    <textarea id="clipboardArea" placeholder="在此区域中 复制(Ctrl+C) / 剪切(Ctrl+X) / 粘贴(Ctrl+V) 文字..." style="width:100%;height:70px;"></textarea>
+    <div style="margin-top:6px;font-size:12px;color:#a6adc8;" id="clipboardInfo">操作: —</div>
+  </div>
+
+  <!-- ===== 7. 拖拽事件 ===== -->
+  <div class="demo-card">
+    <h2>🪁 拖拽事件 (Drag Events)</h2>
+    <!--
+      演示从拖动源（dragstart/drag/dragend）到放置目标（dragenter/dragover/dragleave/drop）的完整过程。
+      特别提示：必须在 dragover 中 preventDefault() 才能触发 drop 事件。
+    -->
+    <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center;">
+      <div class="drag-source" draggable="true" id="dragSource">
+        🪁 拖我
+      </div>
+      <span style="color:#a6adc8;">→</span>
+      <div class="drop-zone" id="dropZone">
+        放置到这里
+      </div>
+    </div>
+    <div style="margin-top:6px;font-size:12px;color:#a6adc8;" id="dragInfo">状态: 等待拖拽</div>
+  </div>
+
+  <!-- ===== 8. 媒体事件 ===== -->
+  <div class="demo-card">
+    <h2>🎵 媒体事件 (Media Events)</h2>
+    <!--
+      使用 Web Audio API 生成一段测试音频，然后演示各种媒体事件：
+      play、pause、ended、timeupdate、loadedmetadata、waiting、canplay 等。
+      并用进度条展示播放进度。
+    -->
+    <audio id="audioPlayer" controls src="" style="width:100%;">
+      您的浏览器不支持 audio 元素
+    </audio>
+    <div style="margin-top:6px;display:flex;gap:8px;flex-wrap:wrap;">
+      <button id="btnPlayTone">▶ 生成测试音频</button>
+      <button id="btnPause">⏸ 暂停</button>
+    </div>
+    <div style="margin-top:8px;font-size:12px;color:#a6adc8;" id="mediaInfo">
+      状态: — &nbsp;|&nbsp; 时间: 0s / 0s
+    </div>
+    <div class="progress-bar" id="mediaProgressBar">
+      <div class="fill" id="mediaProgressFill"></div>
+    </div>
+  </div>
+
+  <!-- ===== 9. 焦点事件补充 & 其他常用事件 ===== -->
+  <div class="demo-card">
+    <h2>🔍 其他常用事件</h2>
+    <!--
+      演示 focusin / focusout（冒泡的焦点事件）、select（文本选择）、
+      wheel（滚轮）、transitionend（CSS 过渡完成）等。
+    -->
+    <div style="display:flex;gap:12px;flex-wrap:wrap;">
+      <input type="text" id="focusDemo1" placeholder="focusin 测试" style="width:45%;">
+      <input type="text" id="focusDemo2" placeholder="focusout 测试" style="width:45%;">
+    </div>
+    <div style="margin-top:8px;display:flex;gap:12px;flex-wrap:wrap;">
+      <div class="box" id="wheelBox" style="width:48%;height:70px;">
+        🖱️ 滚轮测试<br><small id="wheelInfo">滚动滚轮</small>
+      </div>
+      <div class="box" id="transitionBox" style="width:48%;height:70px;transition: transform 0.5s, background 0.5s;">
+        🎬 transitionend<br><small>点我触发动画</small>
+      </div>
+    </div>
+    <div style="margin-top:8px;font-size:12px;color:#a6adc8;" id="otherInfo">焦点/滚轮/过渡: —</div>
+  </div>
+
+  <!-- ===== 10. 事件委托 & 自定义事件 ===== -->
+  <div class="demo-card">
+    <h2>🎯 事件委托 & 自定义事件</h2>
+    <!--
+      事件委托：将子元素的事件统一绑定在父容器上，通过 event.target 判断具体触发元素。
+      自定义事件：使用 CustomEvent 创建并分发自定义事件，携带自定义数据。
+    -->
+    <div id="delegateContainer" style="display:flex;gap:6px;flex-wrap:wrap;">
+      <button data-action="btn1">按钮 A</button>
+      <button data-action="btn2">按钮 B</button>
+      <button data-action="btn3">按钮 C</button>
+      <button id="btnAddMore">+ 添加按钮</button>
+    </div>
+    <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+      <button id="btnCustomEvent">📡 触发自定义事件</button>
+      <span style="font-size:12px;color:#a6adc8;" id="customEventInfo">等待自定义事件...</span>
+    </div>
+  </div>
+
+</div>
+
+<!-- ==================== JavaScript 事件代码 ==================== -->
+<script>
+// ╔══════════════════════════════════════════════════════════════╗
+// ║               JavaScript 常见事件完整演示                      ║
+// ║  覆盖：鼠标 / 键盘 / 表单 / 窗口 / 触摸 / 剪贴板 / 拖拽 /       ║
+// ║        媒体 / 焦点 / 滚轮 / 事件委托 / 自定义事件              ║
+// ╚══════════════════════════════════════════════════════════════╝
+
+// ================================================================
+// 工具函数：向右侧面板添加事件日志
+// ================================================================
+const logList = document.getElementById('logList');
+let eventCounter = 0;
+const maxLogItems = 80; // 限制日志条数，避免 DOM 节点过多影响性能
+
+/**
+ * 在日志面板中显示一条事件记录
+ * @param {string} type - 事件类型名称
+ * @param {string} detail - 事件的详细信息（可选）
+ * @param {string} target - 触发事件的元素标识（可选）
+ */
+function logEvent(type, detail = '', target = '') {
+  eventCounter++;
+  document.getElementById('eventCount').textContent = `已触发 ${eventCounter} 个事件`;
+
+  // 如果日志面板中只有初始的占位提示文字，则清除它
+  const placeholder = logList.querySelector('div[style]');
+  if (placeholder) placeholder.remove();
+
+  // 创建一个新的日志条目并插入到列表顶部（最新事件在上方）
+  const div = document.createElement('div');
+  div.className = 'item';
+  div.innerHTML = `<span class="type">${type}</span>`
+    + (detail ? ` <span class="detail">${detail}</span>` : '')
+    + (target ? ` <span class="target">→ ${target}</span>` : '');
+  logList.prepend(div);
+
+  // 当日志数量超过最大值时，删除最旧的条目（底部的）
+  while (logList.children.length > maxLogItems) {
+    logList.lastChild.remove();
+  }
+}
+
+// 清空日志按钮点击事件：重置日志列表和计数器
+document.getElementById('btnClearLog').addEventListener('click', () => {
+  logList.innerHTML = '<div style="color:#6c7086; text-align:center; padding:20px;">等待事件触发...</div>';
+  eventCounter = 0;
+  document.getElementById('eventCount').textContent = '已触发 0 个事件';
+});
+
+// ================================================================
+// 1. 鼠标事件 (Mouse Events)
+// ================================================================
+/*
+ * 鼠标事件是最常用的用户交互事件。
+ * 触发顺序：mousedown → mouseup → click → (再点一次) → dblclick
+ * mouseover/mouseout 会冒泡且经过子元素也会触发 → 通常用 mouseenter/mouseleave 代替
+ */
+const mouseBox = document.getElementById('mouseBox');
+
+// click —— 单击时触发（完整的按下+释放过程）
+mouseBox.addEventListener('click', (e) => {
+  logEvent('click', `坐标(${e.clientX}, ${e.clientY})`, 'mouseBox');
+  // 短暂点亮指示灯
+  document.getElementById('indicatorClick').classList.add('active');
+  setTimeout(() => document.getElementById('indicatorClick').classList.remove('active'), 200);
+});
+
+// dblclick —— 双击时触发（两次快速 click 间隔 < 约300ms）
+mouseBox.addEventListener('dblclick', (e) => {
+  logEvent('dblclick', `坐标(${e.clientX}, ${e.clientY})`, 'mouseBox');
+  document.getElementById('indicatorDblclick').classList.add('active');
+  setTimeout(() => document.getElementById('indicatorDblclick').classList.remove('active'), 200);
+});
+
+// mousedown —— 鼠标按键按下（不需要松开就能触发）
+mouseBox.addEventListener('mousedown', (e) => {
+  // event.button: 0=左键, 1=中键(滚轮), 2=右键
+  const btnName = ['左键', '中键', '右键'][e.button] || e.button;
+  logEvent('mousedown', `按键: ${btnName}`, 'mouseBox');
+});
+
+// mouseup —— 鼠标按键松开时触发
+mouseBox.addEventListener('mouseup', (e) => {
+  const btnName = ['左键', '中键', '右键'][e.button] || e.button;
+  logEvent('mouseup', `按键: ${btnName}`, 'mouseBox');
+});
+
+// mousemove —— 鼠标在元素内部移动时持续触发（高频！）
+// ⚠️ 实际开发中需使用节流（throttle）优化，这里只更新坐标显示，不记录日志
+mouseBox.addEventListener('mousemove', (e) => {
+  const rect = mouseBox.getBoundingClientRect(); // 获取元素相对视口的位置
+  const x = Math.round(e.clientX - rect.left);   // 计算鼠标在元素内的 X 坐标
+  const y = Math.round(e.clientY - rect.top);    // 计算鼠标在元素内的 Y 坐标
+  document.getElementById('mousePos').textContent = `坐标: (${x}, ${y})  页面坐标: (${e.clientX}, ${e.clientY})`;
+  // 不记录日志，否则会刷屏
+});
+
+// mouseenter —— 鼠标进入元素（不冒泡！因此进入子元素不会重复触发）
+mouseBox.addEventListener('mouseenter', () => {
+  logEvent('mouseenter', '', 'mouseBox');
+});
+
+// mouseleave —— 鼠标离开元素（不冒泡！与 mouseenter 配对使用）
+mouseBox.addEventListener('mouseleave', () => {
+  logEvent('mouseleave', '', 'mouseBox');
+  document.getElementById('mousePos').textContent = '坐标: —'; // 清空坐标显示
+});
+
+// mouseover 和 mouseout 会冒泡，这里不再记录日志，避免和 mouseenter/mouseleave 混淆
+
+// contextmenu —— 鼠标右键点击事件
+mouseBox.addEventListener('contextmenu', (e) => {
+  e.preventDefault(); // 阻止浏览器默认右键菜单弹出
+  logEvent('contextmenu', `坐标(${e.clientX}, ${e.clientY})`, 'mouseBox');
+  document.getElementById('indicatorContext').classList.add('active');
+  setTimeout(() => document.getElementById('indicatorContext').classList.remove('active'), 200);
+});
+
+
+// ================================================================
+// 2. 键盘事件 (Keyboard Events)
+// ================================================================
+/*
+ * 触发顺序：keydown → keypress(已废弃) → keyup
+ * keydown 按住不放会持续触发，event.repeat === true 表示长按重复。
+ * 使用 event.key 获取按键值（如 "a", "Enter"），event.code 获取物理键码（如 "KeyA"）。
+ */
+const keyInput = document.getElementById('keyInput');
+const keyInfo = document.getElementById('keyInfo');
+const comboInfo = document.getElementById('comboInfo');
+
+// keydown —— 任意键按下时触发
+keyInput.addEventListener('keydown', (e) => {
+  // 收集当前激活的组合键
+  const modifiers = [];
+  if (e.ctrlKey)  modifiers.push('Ctrl');
+  if (e.shiftKey) modifiers.push('Shift');
+  if (e.altKey)   modifiers.push('Alt');
+  if (e.metaKey)  modifiers.push('Win/Cmd');
+
+  const detail = `key="${e.key}" code="${e.code}"${e.repeat ? ' (重复)' : ''}`;
+  keyInfo.innerHTML = `key: <b>${e.key}</b> &nbsp;|&nbsp; code: <b>${e.code}</b> &nbsp;|&nbsp; 组合键: ${modifiers.length ? modifiers.join('+') : '无'}`;
+
+  logEvent('keydown', detail, 'keyInput');
+
+  // 示例：拦截 Ctrl+S，阻止浏览器默认的保存网页行为
+  if (e.ctrlKey && e.code === 'KeyS') {
+    e.preventDefault();
+    comboInfo.textContent = '⚠ 已拦截 Ctrl+S（浏览器默认保存被阻止）';
+    setTimeout(() => comboInfo.textContent = '', 2000);
+  }
+});
+
+// keyup —— 按键释放时触发
+keyInput.addEventListener('keyup', (e) => {
+  logEvent('keyup', `key="${e.key}"`, 'keyInput');
+});
+
+
+// ================================================================
+// 3. 表单事件 (Form Events)
+// ================================================================
+/*
+ * input 事件：值一改变就触发（实时，适合字数统计、实时校验）。
+ * change 事件：值改变且失去焦点时触发（但对于 select、checkbox 等则立即触发）。
+ * focus/blur：元素获得/失去焦点（不冒泡），对应的冒泡版本是 focusin/focusout。
+ */
+const demoForm = document.getElementById('demoForm');
+const formName = document.getElementById('formName');
+const formEmail = document.getElementById('formEmail');
+const formCity = document.getElementById('formCity');
+const formAgree = document.getElementById('formAgree');
+
+// input —— 输入框内容发生变化时实时触发
+formName.addEventListener('input', (e) => {
+  logEvent('input', `姓名: "${e.target.value}"`, 'formName');
+});
+formEmail.addEventListener('input', (e) => {
+  logEvent('input', `邮箱: "${e.target.value}"`, 'formEmail');
+});
+
+// change —— 对于文本输入框，值改变且失去焦点时触发；对于下拉框/复选框，选择改变时立即触发
+formCity.addEventListener('change', (e) => {
+  logEvent('change', `城市: "${e.target.value}"`, 'formCity');
+});
+formAgree.addEventListener('change', (e) => {
+  logEvent('change', `同意条款: ${e.target.checked}`, 'formAgree');
+});
+
+// focus —— 获得焦点（不冒泡）
+formName.addEventListener('focus', () => logEvent('focus', '', 'formName'));
+formEmail.addEventListener('focus', () => logEvent('focus', '', 'formEmail'));
+
+// blur —— 失去焦点（不冒泡）
+formName.addEventListener('blur', () => logEvent('blur', '', 'formName'));
+formEmail.addEventListener('blur', () => logEvent('blur', '', 'formEmail'));
+
+// submit —— 表单提交时触发
+demoForm.addEventListener('submit', (e) => {
+  e.preventDefault(); // 阻止默认的表单提交行为，模拟 AJAX 处理
+  logEvent('submit',
+    `姓名="${formName.value}" 邮箱="${formEmail.value}" 城市="${formCity.value}"`,
+    'demoForm'
+  );
+  alert(`✅ 表单提交（已阻止默认行为）\n姓名: ${formName.value}\n邮箱: ${formEmail.value}\n城市: ${formCity.value}`);
+});
+
+// reset —— 表单重置时触发（点击重置按钮或调用 form.reset()）
+demoForm.addEventListener('reset', () => {
+  logEvent('reset', '表单已重置', 'demoForm');
+});
+
+
+// ================================================================
+// 4. 窗口 & 文档事件 (Window & Document Events)
+// ================================================================
+/*
+ * 页面生命周期：DOMContentLoaded（DOM 就绪）→ load（所有资源加载完成）
+ * 页面离开：beforeunload（可询问用户）→ unload/pagehide
+ * 高频事件：resize（窗口大小变化，需要防抖）、scroll（滚动，需要节流/防抖）
+ * visibilitychange：标签页可见性变化，可用于暂停/恢复视频、动画等。
+ */
+
+// DOMContentLoaded —— DOM 树构建完成，无需等待样式表、图片等资源
+// 注意：如果脚本放在 body 底部，此事件通常已经触发了
+document.addEventListener('DOMContentLoaded', () => {
+  logEvent('DOMContentLoaded', 'DOM 树已就绪', 'document');
+});
+
+// load —— 页面完全加载（包括所有图片、CSS、iframe 等）
+window.addEventListener('load', () => {
+  logEvent('load', '所有资源加载完毕', 'window');
+  document.getElementById('windowSize').textContent =
+    `${window.innerWidth}×${window.innerHeight}`;
+});
+
+// beforeunload —— 用户即将离开页面（刷新、关闭、跳转）时触发
+window.addEventListener('beforeunload', (e) => {
+  // 现代浏览器需要调用 preventDefault 才可能显示确认对话框（但大多忽略自定义消息）
+  // 这里注释掉以保持体验流畅，如需测试可取消注释
+  // e.preventDefault();
+  // e.returnValue = ''; // 兼容旧浏览器
+});
+
+// resize —— 窗口大小发生变化时高频触发
+// 使用防抖（debounce）优化：停止调整 300ms 后才记录一次日志
+window.addEventListener('resize', () => {
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  document.getElementById('windowSize').textContent = `${w}×${h}`;
+  // 清除上一次的延时器，重新计时
+  clearTimeout(window._resizeTimer);
+  window._resizeTimer = setTimeout(() => {
+    logEvent('resize', `窗口: ${w}×${h} (防抖后)`, 'window');
+  }, 300);
+});
+
+// scroll —— 页面或元素滚动时高频触发（这里监听的是滚动容器 .scroll-box）
+const scrollBox = document.getElementById('scrollBox');
+scrollBox.addEventListener('scroll', () => {
+  const top = scrollBox.scrollTop;
+  const max = scrollBox.scrollHeight - scrollBox.clientHeight;
+  document.getElementById('scrollPos').textContent = `${Math.round(top)}px`;
+  // 同样使用防抖记录日志
+  clearTimeout(window._scrollTimer);
+  window._scrollTimer = setTimeout(() => {
+    logEvent('scroll', `位置: ${Math.round(top)}px / ${Math.round(max)}px`, 'scrollBox');
+  }, 200);
+});
+
+// visibilitychange —— 标签页可见性切换（切换标签页、最小化窗口等）
+document.addEventListener('visibilitychange', () => {
+  const visible = !document.hidden;
+  document.getElementById('pageVisible').textContent = visible ? '✅' : '❌';
+  logEvent('visibilitychange', visible ? '页面可见 👁' : '页面隐藏 🙈', 'document');
+});
+
+
+// ================================================================
+// 5. 触摸事件 (Touch Events)
+// ================================================================
+/*
+ * 移动端专用，桌面浏览器也会模拟这些事件（可使用鼠标测试）。
+ * TouchEvent 对象包含 touches（所有手指）、targetTouches（当前元素上的手指）、
+ * changedTouches（引起事件的手指）。
+ */
+const touchBox = document.getElementById('touchBox');
+const touchInfo = document.getElementById('touchInfo');
+
+// touchstart —— 手指触摸屏幕
+touchBox.addEventListener('touchstart', (e) => {
+  e.preventDefault(); // 阻止默认滚动（仅演示，实际开发需谨慎）
+  const touch = e.changedTouches[0];
+  logEvent('touchstart', `手指数: ${e.touches.length} 坐标(${Math.round(touch.clientX)}, ${Math.round(touch.clientY)})`, 'touchBox');
+  touchInfo.textContent = `👆 触摸开始 (${e.touches.length} 指)`;
+});
+
+// touchmove —— 手指在屏幕上滑动（高频）
+touchBox.addEventListener('touchmove', (e) => {
+  e.preventDefault();
+  const touch = e.changedTouches[0];
+  touchInfo.textContent = `👆 滑动中 (${Math.round(touch.clientX)}, ${Math.round(touch.clientY)})`;
+  // 高频事件不记录日志
+});
+
+// touchend —— 手指离开屏幕
+touchBox.addEventListener('touchend', (e) => {
+  logEvent('touchend', '手指离开屏幕', 'touchBox');
+  touchInfo.textContent = '等待触摸...';
+});
+
+// touchcancel —— 触摸被系统中断（如来电、通知等）
+touchBox.addEventListener('touchcancel', () => {
+  logEvent('touchcancel', '触摸被中断', 'touchBox');
+  touchInfo.textContent = '等待触摸...';
+});
+
+
+// ================================================================
+// 6. 剪贴板事件 (Clipboard Events)
+// ================================================================
+/*
+ * copy、cut、paste 事件允许读取或修改剪贴板内容。
+ * 出于安全，paste 事件的 clipboardData 必须在同步的事件处理函数中读取。
+ */
+const clipboardArea = document.getElementById('clipboardArea');
+const clipboardInfo = document.getElementById('clipboardInfo');
+
+// copy —— 用户执行复制操作时触发（Ctrl+C 或右键菜单）
+clipboardArea.addEventListener('copy', (e) => {
+  const selection = document.getSelection().toString();
+  logEvent('copy', `复制了 ${selection.length} 个字符`, 'clipboardArea');
+  // 可以在这里修改剪贴板内容（需要配合 preventDefault）
+  // e.clipboardData.setData('text/plain', selection + '\n—— 附加信息');
+  // e.preventDefault();
+});
+
+// cut —— 剪切时触发
+clipboardArea.addEventListener('cut', (e) => {
+  logEvent('cut', '内容被剪切', 'clipboardArea');
+});
+
+// paste —— 粘贴时触发
+clipboardArea.addEventListener('paste', (e) => {
+  // 读取剪贴板中的文本内容
+  const pasted = (e.clipboardData || window.clipboardData).getData('text');
+  logEvent('paste', `粘贴了 ${pasted.length} 个字符`, 'clipboardArea');
+  clipboardInfo.textContent = `操作: 粘贴 "${pasted.slice(0, 30)}${pasted.length > 30 ? '...' : ''}"`;
+  setTimeout(() => clipboardInfo.textContent = '操作: —', 3000);
+});
+
+
+// ================================================================
+// 7. 拖拽事件 (Drag Events)
+// ================================================================
+/*
+ * 完整拖拽流程：
+ * 1. 拖拽源：dragstart（设置拖拽数据）→ drag（持续）→ dragend（结束）
+ * 2. 放置目标：dragenter → dragover（必须 preventDefault 才能触发 drop）→ drop
+ * 重要：要使 drop 事件生效，必须在 dragover 中调用 event.preventDefault()。
+ */
+const dragSource = document.getElementById('dragSource');
+const dropZone = document.getElementById('dropZone');
+const dragInfo = document.getElementById('dragInfo');
+
+// —— 拖拽源事件 ——
+dragSource.addEventListener('dragstart', (e) => {
+  // 设置拖拽数据（Firefox 要求必须设置，否则不会开始拖拽）
+  e.dataTransfer.setData('text/plain', 'drag-source');
+  e.dataTransfer.effectAllowed = 'move'; // 允许移动效果
+  dragSource.style.opacity = '0.5';      // 拖拽时半透明
+  logEvent('dragstart', '', 'dragSource');
+  dragInfo.textContent = '状态: 拖拽中...';
+});
+
+dragSource.addEventListener('drag', () => {
+  // drag 事件持续触发，一般不记录日志
+});
+
+dragSource.addEventListener('dragend', () => {
+  dragSource.style.opacity = '1'; // 恢复不透明
+  logEvent('dragend', '', 'dragSource');
+  dragInfo.textContent = '状态: 拖拽结束';
+});
+
+// —— 放置目标事件 ——
+dropZone.addEventListener('dragenter', (e) => {
+  e.preventDefault(); // 必须调用，表示该元素可以接受拖放
+  dropZone.classList.add('over');
+  logEvent('dragenter', '', 'dropZone');
+});
+
+dropZone.addEventListener('dragover', (e) => {
+  e.preventDefault(); // 阻止默认行为（默认不允许放置），否则 drop 不会触发
+  e.dataTransfer.dropEffect = 'move';
+});
+
+dropZone.addEventListener('dragleave', () => {
+  dropZone.classList.remove('over');
+  logEvent('dragleave', '', 'dropZone');
+});
+
+dropZone.addEventListener('drop', (e) => {
+  e.preventDefault();
+  dropZone.classList.remove('over');
+  const data = e.dataTransfer.getData('text/plain'); // 获取拖拽源设置的数据
+  logEvent('drop', `数据: "${data}"`, 'dropZone');
+  dropZone.textContent = '✅ 已放置！';
+  dragInfo.textContent = '状态: 放置成功！';
+  setTimeout(() => {
+    dropZone.textContent = '放置到这里';
+    dragInfo.textContent = '状态: 等待拖拽';
+  }, 1500);
+});
+
+
+// ================================================================
+// 8. 媒体事件 (Media Events)
+// ================================================================
+/*
+ * 音频/视频元素提供丰富的事件，用于跟踪播放状态。
+ * 这里使用 Web Audio API 生成一段 440Hz 正弦波测试音频，无需外部文件。
+ */
+const audio = document.getElementById('audioPlayer');
+const mediaInfo = document.getElementById('mediaInfo');
+const mediaProgressFill = document.getElementById('mediaProgressFill');
+let audioCtx = null; // AudioContext 实例，用于生成音频
+
+// 点击按钮生成测试音频并播放
+document.getElementById('btnPlayTone').addEventListener('click', () => {
+  // 如果还没有设置音频源，则动态生成 WAV
+  if (!audio.src || audio.src === window.location.href) {
+    try {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const sampleRate = audioCtx.sampleRate;
+      const duration = 5; // 5秒时长
+      const length = sampleRate * duration;
+      const buffer = audioCtx.createBuffer(1, length, sampleRate);
+      const data = buffer.getChannelData(0);
+
+      // 生成 440Hz 正弦波，并添加淡入淡出效果
+      for (let i = 0; i < length; i++) {
+        const t = i / sampleRate;
+        const envelope = Math.min(t / 0.05, 1, (duration - t) / 0.1);
+        data[i] = Math.sin(2 * Math.PI * 440 * t) * 0.3 * envelope;
+      }
+
+      // 将 AudioBuffer 转换为 WAV 格式的 Blob，创建可播放的 URL
+      const wav = audioBufferToWav(buffer);
+      const blob = new Blob([wav], { type: 'audio/wav' });
+      audio.src = URL.createObjectURL(blob);
+    } catch (err) {
+      logEvent('error', '音频生成失败: ' + err.message, 'audioPlayer');
+    }
+  }
+  // 尝试播放
+  audio.play().catch(err => {
+    logEvent('error', '播放失败: ' + err.message, 'audioPlayer');
+  });
+});
+
+// 暂停按钮
+document.getElementById('btnPause').addEventListener('click', () => {
+  audio.pause();
+});
+
+// play —— 开始播放
+audio.addEventListener('play', () => {
+  logEvent('play', '', 'audioPlayer');
+  updateMediaInfo();
+});
+
+// pause —— 暂停
+audio.addEventListener('pause', () => {
+  logEvent('pause', '', 'audioPlayer');
+  updateMediaInfo();
+});
+
+// ended —— 播放到末尾
+audio.addEventListener('ended', () => {
+  logEvent('ended', '播放完毕', 'audioPlayer');
+  mediaProgressFill.style.width = '100%';
+});
+
+// timeupdate —— 播放位置改变（约每250ms触发一次），用于更新进度条
+audio.addEventListener('timeupdate', () => {
+  const pct = audio.duration ? (audio.currentTime / audio.duration * 100) : 0;
+  mediaProgressFill.style.width = pct + '%';
+  updateMediaInfo();
+});
+
+// loadedmetadata —— 音频元数据（时长等）加载完毕
+audio.addEventListener('loadedmetadata', () => {
+  logEvent('loadedmetadata', `时长: ${audio.duration.toFixed(1)}s`, 'audioPlayer');
+});
+
+// waiting —— 缓冲中（网络较慢时触发）
+audio.addEventListener('waiting', () => {
+  logEvent('waiting', '缓冲中...', 'audioPlayer');
+});
+
+// canplay —— 浏览器估计可以开始播放（但不保证流畅）
+audio.addEventListener('canplay', () => {
+  logEvent('canplay', '可以播放', 'audioPlayer');
+});
+
+// 更新媒体信息显示（当前时间/总时长/播放状态）
+function updateMediaInfo() {
+  const cur = audio.currentTime || 0;
+  const dur = audio.duration || 0;
+  const state = audio.paused ? '已暂停' : '播放中';
+  mediaInfo.innerHTML = `状态: <b>${state}</b> &nbsp;|&nbsp; 时间: ${cur.toFixed(1)}s / ${dur.toFixed(1)}s`;
+}
+
+/**
+ * 将 AudioBuffer 转换为 WAV 格式的 ArrayBuffer
+ * 这样就可以生成可播放的 Blob URL
+ */
+function audioBufferToWav(buffer) {
+  const numChannels = buffer.numberOfChannels;
+  const sampleRate = buffer.sampleRate;
+  const format = 1; // PCM
+  const bitsPerSample = 16;
+  const data = buffer.getChannelData(0);
+  const dataLength = data.length * (bitsPerSample / 8);
+  const headerLength = 44; // WAV 文件头长度
+  const totalLength = headerLength + dataLength;
+
+  const arrayBuffer = new ArrayBuffer(totalLength);
+  const view = new DataView(arrayBuffer);
+
+  // 写入 WAV 文件头
+  writeString(view, 0, 'RIFF');
+  view.setUint32(4, totalLength - 8, true);
+  writeString(view, 8, 'WAVE');
+  writeString(view, 12, 'fmt ');
+  view.setUint32(16, 16, true);
+  view.setUint16(20, format, true);
+  view.setUint16(22, numChannels, true);
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, sampleRate * numChannels * bitsPerSample / 8, true);
+  view.setUint16(32, numChannels * bitsPerSample / 8, true);
+  view.setUint16(34, bitsPerSample, true);
+  writeString(view, 36, 'data');
+  view.setUint32(40, dataLength, true);
+
+  // 写入 PCM 数据（16位有符号整数）
+  let offset = 44;
+  for (let i = 0; i < data.length; i++) {
+    const sample = Math.max(-1, Math.min(1, data[i]));
+    const intSample = sample < 0 ? sample * 0x8000 : sample * 0x7FFF;
+    view.setInt16(offset, intSample, true);
+    offset += 2;
+  }
+
+  return arrayBuffer;
+}
+
+// 辅助函数：向 DataView 中写入字符串
+function writeString(view, offset, string) {
+  for (let i = 0; i < string.length; i++) {
+    view.setUint8(offset + i, string.charCodeAt(i));
+  }
+}
+
+
+// ================================================================
+// 9. 其他常用事件 (焦点冒泡版 / 滚轮 / 文本选择 / transitionend)
+// ================================================================
+
+// focusin —— 获得焦点（冒泡版本），常用于事件委托监听整个表单的焦点进入
+document.getElementById('focusDemo1').addEventListener('focusin', () => {
+  logEvent('focusin', 'focusin 获得焦点（冒泡）', 'focusDemo1');
+});
+
+// focusout —— 失去焦点（冒泡版本）
+document.getElementById('focusDemo1').addEventListener('focusout', () => {
+  logEvent('focusout', 'focusout 失去焦点（冒泡）', 'focusDemo1');
+});
+
+// select —— 用户选中文本框中的文字时触发
+document.getElementById('focusDemo1').addEventListener('select', () => {
+  const el = document.getElementById('focusDemo1');
+  const sel = el.value.substring(el.selectionStart, el.selectionEnd);
+  logEvent('select', `选中文字: "${sel}"`, 'focusDemo1');
+});
+
+// wheel —— 鼠标滚轮事件（替代已废弃的 mousewheel）
+const wheelBox = document.getElementById('wheelBox');
+const wheelInfoEl = document.getElementById('wheelInfo');
+wheelBox.addEventListener('wheel', (e) => {
+  e.preventDefault(); // 阻止页面整体滚动
+  // deltaY > 0 表示向下滚动，< 0 表示向上滚动
+  const direction = e.deltaY > 0 ? '↓ 向下' : '↑ 向上';
+  logEvent('wheel', `${direction} deltaY=${e.deltaY.toFixed(0)}`, 'wheelBox');
+  wheelInfoEl.textContent = `滚轮: ${direction} (${e.deltaY.toFixed(0)})`;
+  setTimeout(() => wheelInfoEl.textContent = '滚动滚轮', 1000);
+}, { passive: false }); // passive: false 允许在事件处理函数中调用 preventDefault
+
+// transitionend —— CSS 过渡动画完成时触发
+const transitionBox = document.getElementById('transitionBox');
+transitionBox.addEventListener('click', () => {
+  // 随机旋转角度和颜色，触发 CSS transition
+  const rotate = Math.random() * 30 - 15;
+  const hue = Math.floor(Math.random() * 360);
+  transitionBox.style.transform = `rotate(${rotate}deg) scale(1.05)`;
+  transitionBox.style.background = `hsl(${hue}, 60%, 55%)`;
+  logEvent('(trigger)', '触发 CSS transition', 'transitionBox');
+});
+
+transitionBox.addEventListener('transitionend', (e) => {
+  // 可以知道是哪个 CSS 属性完成了过渡（如 transform, background）
+  logEvent('transitionend', `属性: ${e.propertyName}`, 'transitionBox');
+  // 过渡完成后稍等再恢复原状
+  setTimeout(() => {
+    transitionBox.style.transform = '';
+  }, 300);
+});
+
+// 全局错误事件捕获（例如图片加载失败、JS 运行时错误）
+window.addEventListener('error', (e) => {
+  logEvent('error', e.message || '资源加载失败', e.target.tagName || 'window');
+});
+// 未捕获的 Promise 拒绝
+window.addEventListener('unhandledrejection', (e) => {
+  logEvent('unhandledrejection', e.reason?.message || String(e.reason), 'window');
+});
+
+
+// ================================================================
+// 10. 事件委托 & 自定义事件 (Event Delegation & CustomEvent)
+// ================================================================
+/*
+ * 事件委托：利用事件冒泡，将子元素的同类事件统一绑定在父元素上。
+ * 通过 event.target 判断实际操作的元素，减少监听器数量，并支持动态元素。
+ *
+ * 自定义事件：使用 CustomEvent 创建带数据的自定义事件，
+ * 通过 dispatchEvent 触发，用于组件间解耦通信。
+ */
+const delegateContainer = document.getElementById('delegateContainer');
+const customEventInfo = document.getElementById('customEventInfo');
+
+// —— 事件委托 ——
+// 所有子按钮的 click 事件统一由父容器处理
+delegateContainer.addEventListener('click', (e) => {
+  // 使用 closest 查找最近的 button 祖先元素（因为点击可能落在按钮内的文字上）
+  const btn = e.target.closest('button');
+  if (!btn) return; // 点击的不是按钮，忽略
+
+  const action = btn.dataset.action; // 读取 data-action 属性值
+
+  if (action) {
+    // 根据不同的 action 执行不同逻辑（这里只记录日志）
+    logEvent('事件委托', `action="${action}"`, `按钮 ${btn.textContent.trim()}`);
+  }
+  // 注意：btnAddMore 按钮也会走到这里，但没有 data-action，故不记录
+});
+
+// 动态添加按钮功能：点击“添加按钮”会创建新按钮，自动被事件委托处理
+let btnCounter = 3;
+document.getElementById('btnAddMore').addEventListener('click', () => {
+  btnCounter++;
+  const newBtn = document.createElement('button');
+  newBtn.dataset.action = `btn${btnCounter}`;
+  newBtn.textContent = `按钮 ${String.fromCharCode(64 + btnCounter)}`; // D, E, F...
+  // 将新按钮插入到“添加按钮”之前
+  delegateContainer.insertBefore(newBtn, document.getElementById('btnAddMore'));
+  logEvent('DOM', `动态添加了 ${newBtn.textContent}（事件委托自动生效）`, 'delegateContainer');
+});
+
+// —— 自定义事件 ——
+// 1. 监听自定义事件 'my-custom-event'
+document.addEventListener('my-custom-event', (e) => {
+  // e.detail 包含了派发事件时传递的自定义数据
+  logEvent('CustomEvent', `收到: ${e.detail.message}`, 'document');
+  customEventInfo.textContent = `📬 收到自定义事件！消息: "${e.detail.message}" (时间: ${e.detail.time})`;
+  setTimeout(() => customEventInfo.textContent = '等待自定义事件...', 4000);
+});
+
+// 2. 点击按钮时创建并触发自定义事件
+document.getElementById('btnCustomEvent').addEventListener('click', () => {
+  const event = new CustomEvent('my-custom-event', {
+    bubbles: true,    // 允许事件冒泡
+    cancelable: true, // 允许被 preventDefault 取消
+    detail: {         // 携带的自定义数据
+      message: '你好，这是一条来自按钮的自定义事件！',
+      time: new Date().toLocaleTimeString('zh-CN'),
+      source: 'btnCustomEvent'
+    }
+  });
+  document.dispatchEvent(event); // 在 document 上派发事件
+  logEvent('dispatchEvent', '派发了自定义事件 my-custom-event', 'btnCustomEvent');
+});
+
+
+// ================================================================
+// 补充：事件传播三阶段 & 控制方法（概念解释，未体现为具体功能）
+// ================================================================
+/*
+ * 事件传播的三个阶段：
+ * 1. 捕获阶段 (Capture)  —— 从 window 向下传递到目标元素的父级
+ * 2. 目标阶段 (Target)    —— 到达事件目标元素本身
+ * 3. 冒泡阶段 (Bubble)    —— 从目标元素向上冒泡至 window
+ *
+ * addEventListener 的第三个参数：
+ * - false（默认）：在冒泡阶段处理
+ * - true        ：在捕获阶段处理
+ * - 也可传入配置对象：{ capture, once, passive }
+ *
+ * 控制传播的方法：
+ * - event.stopPropagation()         —— 阻止事件继续传播（冒泡/捕获）
+ * - event.stopImmediatePropagation()—— 阻止传播且阻止当前元素上的其他同类型监听器
+ * - event.preventDefault()          —— 阻止浏览器的默认行为（如链接跳转、表单提交）
+ *
+ * event.target        —— 触发事件的实际元素（最深层）
+ * event.currentTarget —— 绑定事件监听器的元素（即 this）
+ */
+
+// ================================================================
+// 总结：高频事件优化建议（代码仅作说明，未实际应用到演示中）
+// ================================================================
+/*
+ * 以下事件触发频率极高，实际开发中必须优化：
+ * scroll, mousemove, touchmove, wheel, resize, drag, input
+ *
+ * 优化手段：
+ * 1. 节流 (throttle) —— 固定时间间隔执行一次（适合 scroll, mousemove）
+ * 2. 防抖 (debounce) —— 停止触发后延迟执行（适合 resize, 搜索输入）
+ * 3. requestAnimationFrame —— 在下一帧渲染前执行（适合动画相关滚动）
+ * 4. passive: true —— 告诉浏览器不会调用 preventDefault，提升滚动性能
+ */
+
+console.log('✅ JavaScript 常见事件演示页面已就绪');
+console.log('📋 右侧面板可实时查看所有事件日志');
+console.log('💡 打开浏览器开发者工具查看完整代码注释');
+</script>
+
+</body>
+</html>
