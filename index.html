@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="个人主页 - 编程、技术与生活">
+  <title>lsh2005w - 个人主页</title>
+  <style>
+    /* ========== 全局重置 ========== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* ========== CSS 变量（Catppuccin Mocha 调色板） ========== */
+    :root {
+      --base: #1e1e2e;
+      --mantle: #181825;
+      --crust: #11111b;
+      --surface0: #313244;
+      --surface1: #45475a;
+      --surface2: #585b70;
+      --text: #cdd6f4;
+      --subtext0: #a6adc8;
+      --subtext1: #bac2de;
+      --blue: #89b4fa;
+      --lavender: #b4befe;
+      --mauve: #cba6f7;
+      --pink: #f5c2e7;
+      --red: #f38ba8;
+      --green: #a6e3a1;
+      --yellow: #f9e2af;
+      --teal: #94e2d5;
+      --sky: #89dceb;
+      --peach: #fab387;
+
+      --max-width: 900px;
+      --radius: 12px;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+      background: var(--base);
+      color: var(--text);
+      line-height: 1.7;
+      min-height: 100vh;
+    }
+
+    /* ========== 导航栏 ========== */
+    .nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      background: rgba(24, 24, 37, 0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--surface1);
+    }
+    .nav-inner {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 0 24px;
+      height: 56px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .nav-logo {
+      font-size: 18px; font-weight: 700; color: var(--mauve);
+      text-decoration: none; letter-spacing: -0.5px;
+    }
+    .nav-links { display: flex; gap: 24px; list-style: none; }
+    .nav-links a {
+      color: var(--subtext0); text-decoration: none;
+      font-size: 14px; font-weight: 500; transition: color 0.2s;
+    }
+    .nav-links a:hover { color: var(--text); }
+
+    /* ========== 布局容器 ========== */
+    .container {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* ========== Hero 区域 ========== */
+    .hero {
+      padding: 140px 0 80px;
+      text-align: center;
+    }
+    .avatar {
+      width: 120px; height: 120px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--mauve), var(--pink));
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 24px;
+      font-size: 48px;
+      box-shadow: 0 8px 32px rgba(203, 166, 247, 0.25);
+    }
+    .hero h1 {
+      font-size: 42px; font-weight: 800;
+      background: linear-gradient(135deg, var(--mauve), var(--blue));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 12px; letter-spacing: -1px;
+    }
+    .hero .tagline {
+      font-size: 18px; color: var(--subtext0);
+      margin-bottom: 32px; max-width: 500px; margin-left: auto; margin-right: auto;
+    }
+    .hero-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 10px 24px; border-radius: 8px;
+      font-size: 14px; font-weight: 600; text-decoration: none;
+      cursor: pointer; border: none; transition: all 0.2s;
+    }
+    .btn-primary {
+      background: var(--mauve); color: var(--crust);
+    }
+    .btn-primary:hover { box-shadow: 0 4px 20px rgba(203, 166, 247, 0.4); transform: translateY(-1px); }
+    .btn-outline {
+      background: transparent; color: var(--text);
+      border: 1px solid var(--surface1);
+    }
+    .btn-outline:hover { border-color: var(--mauve); background: rgba(203, 166, 247, 0.08); }
+
+    /* ========== Section 通用 ========== */
+    section { padding: 64px 0; }
+    .section-title {
+      font-size: 26px; font-weight: 700; color: var(--text);
+      margin-bottom: 8px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .section-title .icon { font-size: 24px; }
+    .section-divider {
+      width: 48px; height: 3px; background: var(--mauve);
+      border-radius: 2px; margin-bottom: 32px;
+    }
+
+    /* ========== 关于我 ========== */
+    .about-text {
+      font-size: 15px; color: var(--subtext0);
+      max-width: 650px; line-height: 1.9;
+    }
+    .about-text strong { color: var(--text); }
+
+    /* ========== 技能 ========== */
+    .skills-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+      gap: 12px;
+    }
+    .skill-card {
+      background: var(--surface0); border-radius: var(--radius);
+      padding: 18px 16px; text-align: center;
+      border: 1px solid var(--surface1); transition: border-color 0.2s, transform 0.2s;
+    }
+    .skill-card:hover {
+      border-color: var(--mauve); transform: translateY(-2px);
+    }
+    .skill-icon { font-size: 28px; margin-bottom: 8px; }
+    .skill-name { font-size: 14px; color: var(--subtext0); font-weight: 500; }
+
+    /* ========== 项目卡片 ========== */
+    .projects-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 16px;
+    }
+    .project-card {
+      background: var(--surface0); border-radius: var(--radius);
+      padding: 24px; border: 1px solid var(--surface1);
+      transition: border-color 0.2s, transform 0.2s;
+    }
+    .project-card:hover {
+      border-color: var(--blue); transform: translateY(-3px);
+    }
+    .project-card h3 {
+      font-size: 18px; color: var(--blue); margin-bottom: 8px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .project-card p {
+      font-size: 14px; color: var(--subtext0); margin-bottom: 16px; line-height: 1.6;
+    }
+    .project-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }
+    .tag {
+      font-size: 11px; padding: 3px 10px; border-radius: 20px;
+      background: var(--surface1); color: var(--subtext1); font-weight: 500;
+    }
+    .project-link {
+      font-size: 13px; color: var(--teal); text-decoration: none;
+      font-weight: 500; display: inline-flex; align-items: center; gap: 4px;
+      transition: color 0.2s;
+    }
+    .project-link:hover { color: var(--green); }
+
+    /* ========== 社交链接 ========== */
+    .social-links {
+      display: flex; gap: 14px; flex-wrap: wrap;
+    }
+    .social-link {
+      display: flex; align-items: center; gap: 8px;
+      padding: 10px 20px; border-radius: 8px;
+      background: var(--surface0); border: 1px solid var(--surface1);
+      color: var(--subtext0); text-decoration: none;
+      font-size: 14px; font-weight: 500; transition: all 0.2s;
+    }
+    .social-link:hover {
+      border-color: var(--mauve); color: var(--text);
+      background: rgba(203, 166, 247, 0.06);
+    }
+    .social-link .si-icon { font-size: 18px; }
+
+    /* ========== 页脚 ========== */
+    footer {
+      text-align: center; padding: 40px 24px;
+      border-top: 1px solid var(--surface1); color: var(--surface2);
+      font-size: 13px; margin-top: 40px;
+    }
+    footer a { color: var(--subtext0); text-decoration: none; }
+    footer a:hover { color: var(--text); }
+
+    /* ========== 响应式 ========== */
+    @media (max-width: 640px) {
+      .hero { padding: 120px 0 60px; }
+      .hero h1 { font-size: 32px; }
+      .hero .tagline { font-size: 15px; }
+      .section-title { font-size: 22px; }
+      .projects-grid { grid-template-columns: 1fr; }
+      .skills-grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); }
+      .nav-links { gap: 14px; }
+      .nav-links a { font-size: 13px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ==================== 导航栏 ==================== -->
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="#" class="nav-logo">🏠 lsh2005w</a>
+    <ul class="nav-links">
+      <li><a href="#about">关于</a></li>
+      <li><a href="#skills">技能</a></li>
+      <li><a href="#projects">项目</a></li>
+      <li><a href="#contact">联系</a></li>
+    </ul>
+  </div>
+</nav>
+
+<!-- ==================== Hero ==================== -->
+<header class="hero">
+  <div class="avatar">👨‍💻</div>
+  <h1>Hello, 我是 lsh2005w</h1>
+  <p class="tagline">
+    热爱编程与技术探索，专注于 Web 开发、前端工程与开源。
+    这里是我的数字花园 🌱
+  </p>
+  <div class="hero-actions">
+    <a href="#projects" class="btn btn-primary">📂 查看项目</a>
+    <a href="https://github.com/lsh2005w" class="btn btn-outline" target="_blank" rel="noopener">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+      GitHub
+    </a>
+  </div>
+</header>
+
+<!-- ==================== 关于我 ==================== -->
+<section id="about">
+  <div class="container">
+    <h2 class="section-title"><span class="icon">👋</span>关于我</h2>
+    <div class="section-divider"></div>
+    <div class="about-text">
+      <p>
+        你好！我是一名充满热情的 <strong>Web 开发者</strong>，致力于构建优雅、高性能的数字体验。
+        我相信代码是创造力的延伸——每一行代码都能为世界带来微小的改变。
+      </p>
+      <p style="margin-top: 16px;">
+        目前专注于 <strong>前端开发</strong>、<strong>JavaScript/TypeScript 生态</strong> 以及 <strong>开源贡献</strong>。
+        在空闲时间，我喜欢探索新技术、编写技术文章、以及参与开源社区。
+      </p>
+      <p style="margin-top: 16px;">
+        🌏 来自中国 · 中文 & English
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== 技能 ==================== -->
+<section id="skills">
+  <div class="container">
+    <h2 class="section-title"><span class="icon">🛠️</span>技能栈</h2>
+    <div class="section-divider"></div>
+    <div class="skills-grid">
+      <div class="skill-card">
+        <div class="skill-icon">🌐</div>
+        <div class="skill-name">HTML / CSS</div>
+      </div>
+      <div class="skill-card">
+        <div class="skill-icon">⚡</div>
+        <div class="skill-name">JavaScript</div>
+      </div>
+      <div class="skill-card">
+        <div class="skill-icon">🔷</div>
+        <div class="skill-name">TypeScript</div>
+      </div>
+      <div class="skill-card">
+        <div class="skill-icon">🐍</div>
+        <div class="skill-name">Python</div>
+      </div>
+      <div class="skill-card">
+        <div class="skill-icon">⚛️</div>
+        <div class="skill-name">React</div>
+      </div>
+      <div class="skill-card">
+        <div class="skill-icon">🟢</div>
+        <div class="skill-name">Node.js</div>
+      </div>
+      <div class="skill-card">
+        <div class="skill-icon">🐳</div>
+        <div class="skill-name">Docker</div>
+      </div>
+      <div class="skill-card">
+        <div class="skill-icon">🗄️</div>
+        <div class="skill-name">SQL / NoSQL</div>
+      </div>
+      <div class="skill-card">
+        <div class="skill-icon">📝</div>
+        <div class="skill-name">Markdown</div>
+      </div>
+      <div class="skill-card">
+        <div class="skill-icon">🎨</div>
+        <div class="skill-name">Tailwind CSS</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== 项目 ==================== -->
+<section id="projects">
+  <div class="container">
+    <h2 class="section-title"><span class="icon">📁</span>项目展示</h2>
+    <div class="section-divider"></div>
+    <div class="projects-grid">
+
+      <div class="project-card">
+        <h3>📋 JavaScript 事件大全</h3>
+        <p>一个交互式的 JavaScript 事件演示页面，涵盖鼠标、键盘、表单、拖拽、媒体等 10 大类常用事件，带有实时日志面板。</p>
+        <div class="project-tags">
+          <span class="tag">HTML</span>
+          <span class="tag">CSS</span>
+          <span class="tag">JavaScript</span>
+          <span class="tag">Web API</span>
+        </div>
+        <a href="事件示范.html" class="project-link">🔗 查看演示 →</a>
+      </div>
+
+      <div class="project-card">
+        <h3>🏠 个人主页</h3>
+        <p>你现在正在浏览的网站！使用纯 HTML/CSS 构建，响应式设计，Catppuccin 暗色主题。</p>
+        <div class="project-tags">
+          <span class="tag">HTML</span>
+          <span class="tag">CSS</span>
+          <span class="tag">响应式</span>
+          <span class="tag">GitHub Pages</span>
+        </div>
+        <a href="https://github.com/lsh2005w/-" class="project-link" target="_blank" rel="noopener">🔗 源代码 →</a>
+      </div>
+
+      <div class="project-card">
+        <h3>🚧 更多项目即将到来</h3>
+        <p>正在持续学习和构建中。新的项目将陆续添加到这个页面。</p>
+        <div class="project-tags">
+          <span class="tag">Coming Soon</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ==================== 联系 ==================== -->
+<section id="contact">
+  <div class="container">
+    <h2 class="section-title"><span class="icon">📬</span>联系与链接</h2>
+    <div class="section-divider"></div>
+    <div class="social-links">
+      <a href="https://github.com/lsh2005w" class="social-link" target="_blank" rel="noopener">
+        <span class="si-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+        </span>
+        GitHub
+      </a>
+    </div>
+    <p style="margin-top: 24px; color: var(--subtext0); font-size: 14px;">
+      💡 欢迎交流与合作！如果你对我的项目感兴趣，或者有有趣的想法，随时联系我。
+    </p>
+  </div>
+</section>
+
+<!-- ==================== 页脚 ==================== -->
+<footer>
+  <p>© 2026 <a href="https://github.com/lsh2005w">lsh2005w</a> · Built with ❤️ and pure HTML/CSS · Hosted on <a href="https://pages.github.com">GitHub Pages</a></p>
+</footer>
+
+</body>
+</html>
